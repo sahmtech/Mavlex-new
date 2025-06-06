@@ -71,10 +71,12 @@ class Kernel extends HttpKernel
         //'AdminSidebarMenu' => \App\Http\Middleware\AdminSidebarMenu::class,
         'EcomApi' => \App\Http\Middleware\EcomApi::class,
         'superadmin' => \App\Http\Middleware\Superadmin::class,
-        'CheckUserLogin' => \App\Http\Middleware\CheckUserLogin::class,       
-        'listedip' =>\App\Http\Middleware\ApiProtectedMiddleware::class,
+        'CheckUserLogin' => \App\Http\Middleware\CheckUserLogin::class,
+        'listedip' => \App\Http\Middleware\ApiProtectedMiddleware::class,
         'force.2fa' => \App\Http\Middleware\ForceTwoFactor::class,
         're-auth' => \App\Http\Middleware\ReAuthenticate::class,
+
+        'start.session' => \Illuminate\Session\Middleware\StartSession::class,
 
     ];
 }
