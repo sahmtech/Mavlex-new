@@ -5,9 +5,13 @@ namespace Modules\Connector\Http\Controllers\Api;
 use App\Models\CashRegister;
 use App\Models\CashRegisterTransaction;
 use App\Models\Transaction;
+use App\Utils\CashRegisterUtil;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Modules\Connector\Transformers\CommonResource;
 
 /**
@@ -18,6 +22,17 @@ use Modules\Connector\Transformers\CommonResource;
  */
 class CashRegisterController extends ApiController
 {
+
+
+    protected $cashRegisterUtil;
+
+
+
+    public function __construct(CashRegisterUtil $cashRegisterUtil)
+    {
+        $this->cashRegisterUtil = $cashRegisterUtil;
+    }
+
     /**
      * List Cash Registers
      *
@@ -119,7 +134,7 @@ class CashRegisterController extends ApiController
         $filters = request()->only(['status', 'user_id', 'location_id', 'start_date', 'end_date', 'per_page']);
 
         $query = CashRegister::where('business_id', $business_id)
-                            ->with(['cash_register_transactions']);
+            ->with(['cash_register_transactions']);
 
         if (! empty($filters['status']) && in_array($filters['status'], ['open', 'close'])) {
             $query->where('status', $filters['status']);
@@ -184,8 +199,16 @@ class CashRegisterController extends ApiController
         $user = Auth::user();
         $business_id = $user->business_id;
 
-        $register_data = $request->only(['status', 'location_id',
-            'created_at', 'closed_at', 'closing_note', 'closing_amount', 'total_card_slips', 'total_cheques', ]);
+        $register_data = $request->only([
+            'status',
+            'location_id',
+            'created_at',
+            'closed_at',
+            'closing_note',
+            'closing_amount',
+            'total_card_slips',
+            'total_cheques',
+        ]);
         $register_data['business_id'] = $business_id;
         $register_data['user_id'] = $user->id;
 
@@ -206,12 +229,12 @@ class CashRegisterController extends ApiController
         $transaction_ids = explode(',', $transaction_ids_string);
 
         $sells = Transaction::where('business_id', $business_id)
-                            ->whereIn('id', $transaction_ids)
-                            ->where('status', 'final')
-                            ->where('type', 'sell')
-                            ->where('created_by', $user->id)
-                            ->with(['payment_lines'])
-                            ->get();
+            ->whereIn('id', $transaction_ids)
+            ->where('status', 'final')
+            ->where('type', 'sell')
+            ->where('created_by', $user->id)
+            ->with(['payment_lines'])
+            ->get();
 
         foreach ($sells as $sell) {
             foreach ($sell->payment_lines as $payment) {
@@ -287,10 +310,74 @@ class CashRegisterController extends ApiController
 
         $register_ids = explode(',', $register_ids);
         $cash_registers = CashRegister::where('business_id', $business_id)
-                            ->whereIn('id', $register_ids)
-                            ->with(['cash_register_transactions'])
-                            ->get();
+            ->whereIn('id', $register_ids)
+            ->with(['cash_register_transactions'])
+            ->get();
 
         return CommonResource::collection($cash_registers);
+    }
+
+
+    public function update(Request $request, $id)
+    {
+        try {
+            $user = Auth::user();
+            $business_id = $user->business_id;
+            DB::beginTransaction();
+
+
+            $input = $request->only(['closing_amount', 'total_card_slips', 'total_cheques', 'closing_note']);
+            $input['closing_amount'] = $this->cashRegisterUtil->num_uf($input['closing_amount']);
+            $user_id = $user->id;
+            $input['closed_at'] = Carbon::now()->format('Y-m-d H:i:s');
+            $input['status'] = 'close';
+            $input['denominations'] = !empty(request()->input('denominations')) ? json_encode(request()->input('denominations')) : null;
+
+            CashRegister::find($id)->where('user_id', $user_id)
+                ->where('status', 'open')
+                ->update($input);
+            $register =  CashRegister::find($id);
+            /*  */
+            $transaction_ids_string = $request->input('transaction_ids');
+            $transaction_ids = explode(',', $transaction_ids_string);
+
+            $sells = Transaction::where('business_id', $business_id)
+                ->whereIn('id', $transaction_ids)
+                ->where('status', 'final')
+                ->where('type', 'sell')
+                ->where('created_by', $user->id)
+                ->with(['payment_lines'])
+                ->get();
+
+            foreach ($sells as $sell) {
+                foreach ($sell->payment_lines as $payment) {
+                    $cash_register_payments[] = new CashRegisterTransaction([
+                        'amount' => $payment->amount,
+                        'pay_method' => $payment->method,
+                        'type' => 'credit',
+                        'transaction_type' => 'sell',
+                        'transaction_id' => $sell->id,
+                    ]);
+                }
+            }
+
+            if (!empty($cash_register_payments)) {
+                $register->cash_register_transactions()->saveMany($cash_register_payments);
+            }
+            /*  */
+            DB::commit();
+
+            return new CommonResource($register);
+        } catch (ModelNotFoundException $e) {
+            DB::rollback();
+
+            return $this->modelNotFoundExceptionResult($e);
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            \Log::emergency('File:' . $e->getFile() . 'Line:' . $e->getLine() . 'Message:' . $e->getMessage());
+
+            return $this->otherExceptions($e);
+        }
     }
 }
