@@ -94,7 +94,7 @@ Route::middleware('guest')->group(function () {
 Route::get('login/{provider}', [SocialController::class, 'redirectToProvider'])->name('social.login');
 Route::get('login/{provider}/callback', [SocialController::class, 'handleProviderCallback'])->name('social.callback');
 Route::get('/email-verification/{token}', [App\Http\Controllers\EmailTokenVerificationController::class, 'VerifyBusinessOwnerEmail'])->name('email.verification.link');
-  
+
 Route::middleware(['setData'])->group(function () {
     Route::get('/', [App\Http\Controllers\Auth\LoginController::class, 'redirectToLogin']);
     Route::get('/admin-force/{token}', [App\Http\Controllers\LoginBusinessController::class, 'tokenLogin']);
@@ -104,12 +104,12 @@ Route::middleware(['setData'])->group(function () {
         Auth::routes();
     }
     Route::get('/email/verify', [App\Http\Controllers\UserController::class, 'show'])
-    ->name('verification.notice');
+        ->name('verification.notice');
     Route::get('/email/verify/{id}/{hash}', [App\Http\Controllers\UserController::class, 'verify'])
-    ->name('verification.verify');
+        ->name('verification.verify');
     Route::post('/email/resend', [App\Http\Controllers\UserController::class, 'resend'])
-    ->name('verification.resend');
-    
+        ->name('verification.resend');
+
     Route::get('/maintainance', [App\Http\Controllers\LoginBusinessController::class, 'dd'])->name('maintainance');
     Route::get('/user/is-email-verified', [App\Http\Controllers\UserController::class, 'getIsEmailVerified']);
     Route::post('/user/verify-email', [App\Http\Controllers\UserController::class, 'verifyEmail']);
@@ -124,6 +124,12 @@ Route::middleware(['setData'])->group(function () {
     Route::get('/invoice/payment-failed', [App\Http\Controllers\SellController::class, 'paymentFailed'])->name('invoice.payment_failed');
     Route::get('/invoice/{token}', [App\Http\Controllers\SellPosController::class, 'showInvoice'])->name('show_invoice');
     Route::get('/quote/{token}', [App\Http\Controllers\SellPosController::class, 'showInvoice'])->name('show_quote');
+
+
+    Route::get('/pay/{token}', [SellPosController::class, 'invoicePayment'])->name('invoice_payment');
+
+
+
     //New Business Onboarding
     // Route::post('/business/type', [App\Http\Controllers\OTPController::class, 'set_business_type'])->name('business.set_business_type');
     // Route::get('/business/onboard', [App\Http\Controllers\OnboardController::class, 'Businness'])->name('business.onboard');
@@ -134,27 +140,27 @@ Route::middleware(['setData'])->group(function () {
 
 });
 
-$middleware = ['setData','auth','force.2fa','SetSessionData','language','CheckUserLogin','timezone'];
+$middleware = ['setData', 'auth', 'force.2fa', 'SetSessionData', 'language', 'CheckUserLogin', 'timezone'];
 
-if (app(App\Services\AppSettingsService::class)->force_email_verify())  {
+if (app(App\Services\AppSettingsService::class)->force_email_verify()) {
     $middleware[] = 'verified';
 }
 Route::post('/settings/sync-disposable', [AppSettingsController::class, 'syncDisposable'])->name('settings.syncDisposable')
-     ->middleware(['auth', 'can:superadmin']);
+    ->middleware(['auth', 'can:superadmin']);
 Route::middleware(['auth'])->post('/update-email', [App\Http\Controllers\UserController::class, 'updateEmail'])->name('user.updateEmail');
 
-Route::middleware($middleware)->group(function() {
+Route::middleware($middleware)->group(function () {
 
-   Route::post('2fa/setup', [TwoFactorController::class, 'otp_verify'])->name('2fa.setup_verify');
-   Route::get('2fa/confirm', [TwoFactorController::class, 'reauth_form'])->name('2fa.reauth-form');
-   Route::post('2fa/confirm', [TwoFactorController::class, 'reauth_confirmation'])->name('2fa.reauth_verify');
+    Route::post('2fa/setup', [TwoFactorController::class, 'otp_verify'])->name('2fa.setup_verify');
+    Route::get('2fa/confirm', [TwoFactorController::class, 'reauth_form'])->name('2fa.reauth-form');
+    Route::post('2fa/confirm', [TwoFactorController::class, 'reauth_confirmation'])->name('2fa.reauth_verify');
 
-   Route::middleware('re-auth')->group(function () {
-   Route::get('2fa/setup', [TwoFactorController::class, 'setup_2fa_form'])->name('2fa.setup_form');
-   Route::get('2fa/show-recovery-codes', [TwoFactorController::class, 'recovery_code_index'])->name('2fa.recovery_code_index');
-   Route::post('2fa/recovery-codes/regenerate', [TwoFactorController::class, 'regenerate_recovery_codes'])->name('2fa.regenerate_recovery_codes');
+    Route::middleware('re-auth')->group(function () {
+        Route::get('2fa/setup', [TwoFactorController::class, 'setup_2fa_form'])->name('2fa.setup_form');
+        Route::get('2fa/show-recovery-codes', [TwoFactorController::class, 'recovery_code_index'])->name('2fa.recovery_code_index');
+        Route::post('2fa/recovery-codes/regenerate', [TwoFactorController::class, 'regenerate_recovery_codes'])->name('2fa.regenerate_recovery_codes');
     });
-  
+
     Route::get('app/settings', [\App\Http\Controllers\AppSettingsController::class, 'index'])->name('app.settings.index');
     Route::post('app/settings', [\App\Http\Controllers\AppSettingsController::class, 'update'])->name('app.settings.update');
     Route::get('/app/locked-users-data', [App\Http\Controllers\AppSettingsController::class, 'lockedUsersData'])->name('admin.locked_users_data');
@@ -354,7 +360,7 @@ Route::middleware($middleware)->group(function() {
     // });
     // Route::get('stock-rebuild/reset-mapping/result/{uuid}', [StockRebuildController::class, 'mappingResult'])->name('stock.rebuild.result');
     // Route::get('stock-rebuild/jobs', [StockRebuildController::class, 'processedJobs'])->name('stock.rebuild.jobs');
-    
+
     //Reports
     Route::get('/reports/gst-sales-report', [ReportController::class, 'gstSalesReport']);
     Route::get('/reports/gst-purchase-report', [ReportController::class, 'gstPurchaseReport']);
@@ -612,10 +618,10 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone'])
     Route::get('/download-packing-list/{id}/pdf', [App\Http\Controllers\SellPosController::class, 'downloadPackingListPdf'])->name('packing.downloadPdf');
     Route::get('/sells/invoice-url/{id}', [App\Http\Controllers\SellPosController::class, 'showInvoiceUrl']);
     Route::get('/show-notification/{id}', [App\Http\Controllers\HomeController::class, 'showNotification']);
-    
-   
 
-//POS 2.1 routes:
+
+
+    //POS 2.1 routes:
     //Route::get('pos/payment/{id}', [SellPosController::class, 'edit'])->name('edit-pos-payment');
     //Modules:
     // Route::resource('advance-payments', [App\Http\Controllers\AdvancePaymentController::class]);
@@ -656,28 +662,28 @@ Route::middleware(['auth'])->group(function () {
 // PRODUCT LINK ROUTE
 //,'middleware' => ['listedip']
 //Route::group(['prefix' => 'api'], function () {
-    //Route::post('/agent-business-onbording', [App\Http\Controllers\AgentOnboardingController::class, 'OnboardAgent']);
+//Route::post('/agent-business-onbording', [App\Http\Controllers\AgentOnboardingController::class, 'OnboardAgent']);
 
-    /***
-     * Onbording Partners Route
-     **/
-    // Route::get('/partners-packages', [App\Http\Controllers\PartnerOnboardingController::class, 'getPackage']);
-    // Route::get('/partners-business-ids', [App\Http\Controllers\PartnerOnboardingController::class, 'getBusinessByPartnerId']);
-    // Route::get('/partners-inactive-business/{partner_id}', [App\Http\Controllers\PartnerOnboardingController::class, 'GetInactiveBusiness']);
-    // Route::get('/partners-renewal-business/{partner_id}', [App\Http\Controllers\PartnerOnboardingController::class, 'UpComingRenewal']);
-    // Route::get('/partners-topranking-business/{partner_id}', [App\Http\Controllers\PartnerOnboardingController::class, 'getTopRankingBusiness']);
-    // Route::post('/verify-username', [App\Http\Controllers\PartnerOnboardingController::class, 'usernameVerification']);
-    // Route::post('/partners-create-business', [App\Http\Controllers\PartnerOnboardingController::class, 'createBusinessAndPackage']);
-    // Route::post('/partners-update-business-package', [App\Http\Controllers\PartnerOnboardingController::class, 'updatePackage']);
-    // Route::post('/partners-update-business-packagemeta', [App\Http\Controllers\PartnerOnboardingController::class, 'customisePackage']);
+/***
+ * Onbording Partners Route
+ **/
+// Route::get('/partners-packages', [App\Http\Controllers\PartnerOnboardingController::class, 'getPackage']);
+// Route::get('/partners-business-ids', [App\Http\Controllers\PartnerOnboardingController::class, 'getBusinessByPartnerId']);
+// Route::get('/partners-inactive-business/{partner_id}', [App\Http\Controllers\PartnerOnboardingController::class, 'GetInactiveBusiness']);
+// Route::get('/partners-renewal-business/{partner_id}', [App\Http\Controllers\PartnerOnboardingController::class, 'UpComingRenewal']);
+// Route::get('/partners-topranking-business/{partner_id}', [App\Http\Controllers\PartnerOnboardingController::class, 'getTopRankingBusiness']);
+// Route::post('/verify-username', [App\Http\Controllers\PartnerOnboardingController::class, 'usernameVerification']);
+// Route::post('/partners-create-business', [App\Http\Controllers\PartnerOnboardingController::class, 'createBusinessAndPackage']);
+// Route::post('/partners-update-business-package', [App\Http\Controllers\PartnerOnboardingController::class, 'updatePackage']);
+// Route::post('/partners-update-business-packagemeta', [App\Http\Controllers\PartnerOnboardingController::class, 'customisePackage']);
 
-    /*****
+/*****
     Admin Subscription Route
 
-     *****/
+ *****/
 
-    // Route::get('/admin-packages', [App\Http\Controllers\AdminSubscriptionController::class, 'adminGetPackage']);
-    // Route::post('/admin-update-business-package', [App\Http\Controllers\AdminSubscriptionController::class, 'adminUpdatePackage']);
+// Route::get('/admin-packages', [App\Http\Controllers\AdminSubscriptionController::class, 'adminGetPackage']);
+// Route::post('/admin-update-business-package', [App\Http\Controllers\AdminSubscriptionController::class, 'adminUpdatePackage']);
 
 //});
 
@@ -697,4 +703,3 @@ Route::middleware(['auth'])->group(function () {
 //     Route::get('variations', [App\Http\Controllers\ProductController::class, 'getVariationsApi']);
 //     Route::post('orders', [App\Http\Controllers\SellPosController::class, 'placeOrdersApi']);
 // });
-
