@@ -1,32 +1,224 @@
 //This file contains all functions used in the app.
-
-function __calculate_amount(calculation_type, calculation_amount, amount) {
+function __calculate_amount(
+    calculation_type,
+    calculation_amount,
+    amount,
+    min_amount = 0,
+    calculation_amount_2 = 0,
+    min_amount_2 = 0
+) {
     var calculation_amount = parseFloat(calculation_amount);
+    var min_amount = parseFloat(min_amount);
     calculation_amount = isNaN(calculation_amount) ? 0 : calculation_amount;
+
+    var calculation_amount_2 = parseFloat(calculation_amount_2);
+    var min_amount_2 = parseFloat(min_amount_2);
+    calculation_amount_2 = isNaN(calculation_amount_2)
+        ? 0
+        : calculation_amount_2;
 
     var amount = parseFloat(amount);
     amount = isNaN(amount) ? 0 : amount;
-
+    var res = parseFloat(0.0);
     switch (calculation_type) {
-        case 'fixed':
-            return parseFloat(calculation_amount);
-        case 'percentage':
-        case 'percent':
-                var div = Decimal.div(calculation_amount, 100).toNumber();
-            return Decimal.mul(div, amount).toNumber();
+        case "fixed":
+            if (calculation_amount_2 > 0) {
+                return (
+                    parseFloat(calculation_amount) +
+                    parseFloat(calculation_amount_2)
+                );
+            } else {
+                return parseFloat(calculation_amount);
+            }
+        case "percentage":
+        case "percent":
+            // if there is a second tax rate
+            if (calculation_amount_2 > 0) {
+                // tax_1 greated than tax_2
+                if (calculation_amount > calculation_amount_2) {
+                    // add tax_1 first
+                    if (min_amount > 0 && amount < min_amount) {
+                        res += min_amount;
+                    } else {
+                        var div = Decimal.div(
+                            calculation_amount,
+                            100
+                        ).toNumber();
+                        res += Decimal.mul(div, amount).toNumber();
+                    }
+                    // add tax_2
+                    if (min_amount_2 > 0 && res < min_amount_2) {
+                        res += min_amount_2;
+                    } else {
+                        var div = Decimal.div(
+                            calculation_amount_2,
+                            100
+                        ).toNumber();
+                        res += Decimal.mul(div, res + amount).toNumber();
+                    }
+                    return res;
+                }
+                // tax_2 is greater
+                else {
+                    // add tax_2
+                    if (min_amount_2 > 0 && amount < min_amount_2) {
+                        res += min_amount_2;
+                    } else {
+                        var div = Decimal.div(
+                            calculation_amount_2,
+                            100
+                        ).toNumber();
+                        res += Decimal.mul(div, amount).toNumber();
+                    }
+
+                    // add tax_1 first
+                    if (min_amount > 0 && res < min_amount) {
+                        res += min_amount;
+                    } else {
+                        var div = Decimal.div(
+                            calculation_amount,
+                            100
+                        ).toNumber();
+                        res += Decimal.mul(div, res + amount).toNumber();
+                    }
+
+                    return res;
+                }
+            }
+            // if there is only one tax rate
+            else {
+                if (min_amount > 0 && amount < min_amount) {
+                    return min_amount;
+                } else {
+                    var div = Decimal.div(calculation_amount, 100).toNumber();
+                    return Decimal.mul(div, amount).toNumber();
+                }
+            }
+
         default:
             return 0;
     }
 }
 
 //Add specified percentage to the input amount.
-function __add_percent(amount, percentage = 0) {
+// flag_add_percent
+function __add_percent(
+    amount,
+    percentage = 0,
+    min_amount = 0,
+    percentage_2 = 0,
+    min_amount_2 = 0
+) {
     var amount = parseFloat(amount);
-    var percentage = isNaN(percentage) ? 0 : parseFloat(percentage);
+    var min_amount = parseFloat(min_amount);
+    var min_amount_2 = parseFloat(min_amount_2);
+    var res = parseFloat(0.0);
+    //apply the higher percentage first
 
-    var div = Decimal.div(percentage, 100).toNumber();
-    var mul = Decimal.mul(div, amount).toNumber();
-    return Decimal.add(amount, mul).toNumber();
+    if (percentage_2 > 0) {
+        // console.log("percentage_2 > 0");
+        // console.log(amount);
+        // console.log(" --------- ");
+        // two tax rates
+        // in case the first is greater
+        if (percentage > percentage_2) {
+            // console.log("ercentage > percentage_2");
+            // apply the first
+            if (min_amount > 0 && amount < min_amount) {
+                res = Decimal.add(amount, min_amount).toNumber();
+                // console.log("amount < min_amount");
+                // console.log(res);
+                // console.log(" --------- ");
+            } else {
+                var percentage = isNaN(percentage) ? 0 : parseFloat(percentage);
+
+                var div = Decimal.div(percentage, 100).toNumber();
+                var mul = Decimal.mul(div, amount).toNumber();
+                res = Decimal.add(amount, mul).toNumber();
+                // console.log("amount > min_amount");
+                // console.log(res);
+                // console.log(" --------- ");
+            }
+            // apply the second
+            if (min_amount_2 > 0 && res < min_amount_2) {
+                res = Decimal.add(res, min_amount_2).toNumber();
+                // console.log("res < min_amount_2");
+                // console.log(res);
+                // console.log(" --------- ");
+            } else {
+                var percentage_2 = isNaN(percentage_2)
+                    ? 0
+                    : parseFloat(percentage_2);
+
+                var div = Decimal.div(percentage_2, 100).toNumber();
+                var mul = Decimal.mul(div, res).toNumber();
+                res = Decimal.add(res, mul).toNumber();
+                // console.log("res > min_amount_2");
+                // console.log(res);
+                // console.log(" --------- ");
+            }
+        }
+        // in case the second is greater
+        else {
+            // console.log("percentage_2 > percentage");
+            // apply the second
+            if (min_amount_2 > 0 && amount < min_amount_2) {
+                res = Decimal.add(amount, min_amount_2).toNumber();
+                // console.log("amount < min_amount_2");
+                // console.log(res);
+                // console.log(" --------- ");
+            } else {
+                var percentage_2 = isNaN(percentage_2)
+                    ? 0
+                    : parseFloat(percentage_2);
+
+                var div = Decimal.div(percentage_2, 100).toNumber();
+                var mul = Decimal.mul(div, amount).toNumber();
+                res = Decimal.add(amount, mul).toNumber();
+                // console.log("amount > min_amount_2");
+                // console.log(res);
+                // console.log(" --------- ");
+            }
+            // apply the first
+            if (min_amount > 0 && res < min_amount) {
+                res = Decimal.add(res, min_amount).toNumber();
+                // console.log("res < min_amount");
+                // console.log(res);
+                // console.log(" --------- ");
+            } else {
+                var percentage = isNaN(percentage) ? 0 : parseFloat(percentage);
+
+                var div = Decimal.div(percentage, 100).toNumber();
+                var mul = Decimal.mul(div, res).toNumber();
+                res = Decimal.add(res, mul).toNumber();
+                // console.log("res > min_amount");
+                // console.log(res);
+                // console.log(" --------- ");
+            }
+        }
+    } else {
+        // console.log("percentage_2 <= 0");
+        // console.log(amount);
+        // console.log(" --------- ");
+        // only one tax rate
+        if (min_amount > 0 && amount < min_amount) {
+            res = Decimal.add(amount, min_amount).toNumber();
+            // console.log("amount < min_amount");
+            // console.log(res);
+            // console.log(" --------- ");
+        } else {
+            var percentage = isNaN(percentage) ? 0 : parseFloat(percentage);
+
+            var div = Decimal.div(percentage, 100).toNumber();
+            var mul = Decimal.mul(div, amount).toNumber();
+            res = Decimal.add(amount, mul).toNumber();
+            // console.log("amount > min_amount");
+            // console.log(res);
+            // console.log(" --------- ");
+        }
+    }
+
+    return res;
 }
 
 //Substract specified percentage to the input amount.
@@ -85,13 +277,13 @@ function __currency_trans_from_en(
         var decimal = __currency_decimal_separator;
     }
 
-    symbol = '';
-    var format = '%s%v';
+    symbol = "";
+    var format = "%s%v";
     if (show_symbol) {
         symbol = s;
-        format = '%s %v';
-        if (__currency_symbol_placement == 'after') {
-            format = '%v %s';
+        format = "%s %v";
+        if (__currency_symbol_placement == "after") {
+            format = "%v %s";
         }
     }
 
@@ -99,24 +291,31 @@ function __currency_trans_from_en(
         precision = __quantity_precision;
     }
 
-    return accounting.formatMoney(input, symbol, precision, thousand, decimal, format);
+    return accounting.formatMoney(
+        input,
+        symbol,
+        precision,
+        thousand,
+        decimal,
+        format
+    );
 }
 
 function __currency_convert_recursively(element, use_page_currency = false) {
-    element.find('.display_currency').each(function() {
+    element.find(".display_currency").each(function () {
         var value = $(this).text();
 
-        var show_symbol = $(this).data('currency_symbol');
+        var show_symbol = $(this).data("currency_symbol");
         if (show_symbol == undefined || show_symbol != true) {
             show_symbol = false;
         }
 
-        var highlight = $(this).data('highlight');
+        var highlight = $(this).data("highlight");
         if (highlight == true) {
             __highlight(value, $(this));
         }
 
-        var is_quantity = $(this).data('is_quantity');
+        var is_quantity = $(this).data("is_quantity");
         if (is_quantity == undefined || is_quantity != true) {
             is_quantity = false;
         }
@@ -125,14 +324,22 @@ function __currency_convert_recursively(element, use_page_currency = false) {
             show_symbol = false;
         }
 
-        $(this).text(__currency_trans_from_en(value, show_symbol, use_page_currency, __currency_precision, is_quantity));
+        $(this).text(
+            __currency_trans_from_en(
+                value,
+                show_symbol,
+                use_page_currency,
+                __currency_precision,
+                is_quantity
+            )
+        );
     });
 }
 
 function __translate(str, obj = []) {
     var trans = LANG[str];
-    $.each(obj, function(key, value) {
-        trans = trans.replace(':' + key, value);
+    $.each(obj, function (key, value) {
+        trans = trans.replace(":" + key, value);
     });
     if (trans) {
         return trans;
@@ -143,11 +350,11 @@ function __translate(str, obj = []) {
 
 //If the value is positive, text-success class will be applied else text-danger
 function __highlight(value, obj) {
-    obj.removeClass('text-success').removeClass('text-danger');
+    obj.removeClass("text-success").removeClass("text-danger");
     if (value > 0) {
-        obj.addClass('text-success');
+        obj.addClass("text-success");
     } else if (value < 0) {
-        obj.addClass('text-danger');
+        obj.addClass("text-danger");
     }
 }
 
@@ -169,7 +376,12 @@ function __number_f(
     use_page_currency = false,
     precision = __currency_precision
 ) {
-    return __currency_trans_from_en(input, show_symbol, use_page_currency, precision);
+    return __currency_trans_from_en(
+        input,
+        show_symbol,
+        use_page_currency,
+        precision
+    );
 }
 
 //Read input and convert it into natural number
@@ -184,7 +396,7 @@ function __write_number(
     use_page_currency = false,
     precision = __currency_precision
 ) {
-    if(input_element.hasClass('input_quantity')) {
+    if (input_element.hasClass("input_quantity")) {
         precision = __quantity_precision;
     }
 
@@ -192,19 +404,19 @@ function __write_number(
 }
 
 //Return the font-awesome html based on class value
-function __fa_awesome($class = 'fa-sync fa-spin fa-fw ') {
+function __fa_awesome($class = "fa-sync fa-spin fa-fw ") {
     return '<i class="fa ' + $class + '"></i>';
 }
 
 //Converts standard dates (YYYY-MM-DD) to human readable dates
 function __show_date_diff_for_human(element) {
     moment.locale(app_locale);
-    element.find('.time-to-now').each(function() {
+    element.find(".time-to-now").each(function () {
         var string = $(this).text();
         $(this).text(moment(string).toNow(true));
     });
 
-    element.find('.time-from-now').each(function() {
+    element.find(".time-from-now").each(function () {
         var string = $(this).text();
         $(this).text(moment(string).from(moment()));
     });
@@ -224,46 +436,58 @@ function round_to_iraqi_dinnar(value) {
 }
 
 function __select2(selector) {
-    if ($('html').attr('dir') == 'rtl') selector.select2({ dir: 'rtl' });
+    if ($("html").attr("dir") == "rtl") selector.select2({ dir: "rtl" });
     else selector.select2();
 }
 
 function update_font_size() {
-    var font_size = localStorage.getItem('upos_font_size');
+    var font_size = localStorage.getItem("upos_font_size");
     var font_size_array = [];
-    font_size_array['s'] = ' - 3px';
-    font_size_array['m'] = '';
-    font_size_array['l'] = ' + 3px';
-    font_size_array['xl'] = ' + 6px';
-    if (typeof font_size !== 'undefined') {
-        $('header').css('font-size', 'calc(100% ' + font_size_array[font_size] + ')');
-        $('footer').css('font-size', 'calc(100% ' + font_size_array[font_size] + ')');
-        $('section').each(function() {
-            if (!$(this).hasClass('print_section')) {
-                $(this).css('font-size', 'calc(100% ' + font_size_array[font_size] + ')');
+    font_size_array["s"] = " - 3px";
+    font_size_array["m"] = "";
+    font_size_array["l"] = " + 3px";
+    font_size_array["xl"] = " + 6px";
+    if (typeof font_size !== "undefined") {
+        $("header").css(
+            "font-size",
+            "calc(100% " + font_size_array[font_size] + ")"
+        );
+        $("footer").css(
+            "font-size",
+            "calc(100% " + font_size_array[font_size] + ")"
+        );
+        $("section").each(function () {
+            if (!$(this).hasClass("print_section")) {
+                $(this).css(
+                    "font-size",
+                    "calc(100% " + font_size_array[font_size] + ")"
+                );
             }
         });
-        $('div.modal').css('font-size', 'calc(100% ' + font_size_array[font_size] + ')');
+        $("div.modal").css(
+            "font-size",
+            "calc(100% " + font_size_array[font_size] + ")"
+        );
     }
 }
 
 function sum_table_col(table, class_name) {
     var sum = 0;
     table
-        .find('tbody')
-        .find('tr')
-        .each(function() {
+        .find("tbody")
+        .find("tr")
+        .each(function () {
             if (
                 parseFloat(
                     $(this)
-                        .find('.' + class_name)
-                        .data('orig-value')
+                        .find("." + class_name)
+                        .data("orig-value")
                 )
             ) {
                 sum += parseFloat(
                     $(this)
-                        .find('.' + class_name)
-                        .data('orig-value')
+                        .find("." + class_name)
+                        .data("orig-value")
                 );
             }
         });
@@ -273,16 +497,17 @@ function sum_table_col(table, class_name) {
 
 function __count_status(data, key) {
     var statuses = [];
-    for (var r in data){
+    for (var r in data) {
         var element = $(data[r][key]);
-        if (element.data('orig-value')) {
-            var status_name = element.data('orig-value');
+        if (element.data("orig-value")) {
+            var status_name = element.data("orig-value");
             if (!(status_name in statuses)) {
                 statuses[status_name] = [];
-                statuses[status_name]['count'] = 1;
-                statuses[status_name]['display_name'] = element.data('status-name');
+                statuses[status_name]["count"] = 1;
+                statuses[status_name]["display_name"] =
+                    element.data("status-name");
             } else {
-                statuses[status_name]['count'] += 1;
+                statuses[status_name]["count"] += 1;
             }
         }
     }
@@ -291,10 +516,13 @@ function __count_status(data, key) {
     var html = '<p class="text-left"><small>';
     for (var key in statuses) {
         html +=
-            statuses[key]['display_name'] + ' - ' + statuses[key]['count'] + '</br>';
+            statuses[key]["display_name"] +
+            " - " +
+            statuses[key]["count"] +
+            "</br>";
     }
 
-    html += '</small></p>';
+    html += "</small></p>";
 
     return html;
 }
@@ -303,18 +531,19 @@ function __sum_status(table, class_name) {
     var statuses = [];
     var status_html = [];
     table
-        .find('tbody')
-        .find('tr')
-        .each(function() {
-            element = $(this).find('.' + class_name);
-            if (element.data('orig-value')) {
-                var status_name = element.data('orig-value');
+        .find("tbody")
+        .find("tr")
+        .each(function () {
+            element = $(this).find("." + class_name);
+            if (element.data("orig-value")) {
+                var status_name = element.data("orig-value");
                 if (!(status_name in statuses)) {
                     statuses[status_name] = [];
-                    statuses[status_name]['count'] = 1;
-                    statuses[status_name]['display_name'] = element.data('status-name');
+                    statuses[status_name]["count"] = 1;
+                    statuses[status_name]["display_name"] =
+                        element.data("status-name");
                 } else {
-                    statuses[status_name]['count'] += 1;
+                    statuses[status_name]["count"] += 1;
                 }
             }
         });
@@ -327,95 +556,102 @@ function __sum_status_html(table, class_name) {
     var status_html = '<p class="text-left"><small>';
     for (var key in statuses_sum) {
         status_html +=
-            statuses_sum[key]['display_name'] + ' - ' + statuses_sum[key]['count'] + '</br>';
+            statuses_sum[key]["display_name"] +
+            " - " +
+            statuses_sum[key]["count"] +
+            "</br>";
     }
 
-    status_html += '</small></p>';
+    status_html += "</small></p>";
 
     return status_html;
 }
 
-function __sum_stock(table, class_name, label_direction = 'right') {
+function __sum_stock(table, class_name, label_direction = "right") {
     var stocks = [];
     table
-        .find('tbody')
-        .find('tr')
-        .each(function() {
-            element = $(this).find('.' + class_name);
-            if (element.data('orig-value')) {
-                var unit_name = element.data('unit');
+        .find("tbody")
+        .find("tr")
+        .each(function () {
+            element = $(this).find("." + class_name);
+            if (element.data("orig-value")) {
+                var unit_name = element.data("unit");
                 if (!(unit_name in stocks)) {
-                    stocks[unit_name] = parseFloat(element.data('orig-value'));
+                    stocks[unit_name] = parseFloat(element.data("orig-value"));
                 } else {
-                    stocks[unit_name] += parseFloat(element.data('orig-value'));
+                    stocks[unit_name] += parseFloat(element.data("orig-value"));
                 }
             }
         });
     var stock_html = '<p class="text-left"><small>';
 
     for (var key in stocks) {
-        if (label_direction == 'left') {
+        if (label_direction == "left") {
             stock_html +=
                 key +
                 ' : <span class="display_currency" data-is_quantity="true">' +
                 stocks[key] +
-                '</span> ' +
-                '</br>';
+                "</span> " +
+                "</br>";
         } else {
             stock_html +=
                 '<span class="display_currency" data-is_quantity="true">' +
                 stocks[key] +
-                '</span> ' +
+                "</span> " +
                 key +
-                '</br>';
+                "</br>";
         }
     }
 
-    stock_html += '</small></p>';
+    stock_html += "</small></p>";
 
     return stock_html;
 }
 
 function __print_receipt(section_id = null) {
     if (section_id) {
-        var imgs = document.getElementById(section_id).getElementsByTagName("img");
+        var imgs = document
+            .getElementById(section_id)
+            .getElementsByTagName("img");
     } else {
         var imgs = document.images;
     }
-    
+
     img_len = imgs.length;
     if (img_len) {
         img_counter = 0;
 
-        [].forEach.call( imgs, function( img ) {
-            img.addEventListener( 'load', incrementImageCounter, false );
-        } );
+        [].forEach.call(imgs, function (img) {
+            img.addEventListener("load", incrementImageCounter, false);
+        });
     } else {
-        setTimeout(function() {
+        setTimeout(function () {
             window.print();
 
             // setTimeout(function() {
             //     $('#receipt_section').html('');
             // }, 5000);
-            
         }, 1000);
     }
 }
 
 function incrementImageCounter() {
     img_counter++;
-    if ( img_counter === img_len ) {
+    if (img_counter === img_len) {
         window.print();
-        
+
         // setTimeout(function() {
         //     $('#receipt_section').html('');
         // }, 5000);
     }
 }
 
-function __getUnitMultiplier(row){
-    multiplier = row.find('select.sub_unit').find(':selected').data('multiplier');
-    if(multiplier == undefined){
+function __getUnitMultiplier(row) {
+    multiplier = row
+        .find("select.sub_unit")
+        .find(":selected")
+        .data("multiplier");
+    if (multiplier == undefined) {
         return 1;
     } else {
         return parseFloat(multiplier);
@@ -423,29 +659,31 @@ function __getUnitMultiplier(row){
 }
 
 //Rounds a number to the nearest given multiple
-function __round(number, multiple = 0){
-
+function __round(number, multiple = 0) {
     rounded_number = number;
-    if(multiple > 0) {
-        x = new Decimal(number)
+    if (multiple > 0) {
+        x = new Decimal(number);
         rounded_number = x.toNearest(multiple);
     }
 
     var output = {
         number: rounded_number,
-        diff: rounded_number - number
-    }
-    
+        diff: rounded_number - number,
+    };
+
     return output;
 }
 
 //This method removes unwanted get parameter from the data.
-function __datatable_ajax_callback(data){
+function __datatable_ajax_callback(data) {
     for (var i = 0, len = data.columns.length; i < len; i++) {
-        if (! data.columns[i].search.value) delete data.columns[i].search;
-        if (data.columns[i].searchable === true) delete data.columns[i].searchable;
-        if (data.columns[i].orderable === true) delete data.columns[i].orderable;
-        if (data.columns[i].data === data.columns[i].name) delete data.columns[i].name;
+        if (!data.columns[i].search.value) delete data.columns[i].search;
+        if (data.columns[i].searchable === true)
+            delete data.columns[i].searchable;
+        if (data.columns[i].orderable === true)
+            delete data.columns[i].orderable;
+        if (data.columns[i].data === data.columns[i].name)
+            delete data.columns[i].name;
     }
     delete data.search.regex;
 
@@ -457,51 +695,54 @@ function __page_leave_confirmation(form) {
     var form_obj = $(form);
     var orig_form_data = form_obj.serialize();
 
-    setTimeout(function(){ orig_form_data = form_obj.serialize(); }, 1000);
-    
-    $(document).on("submit", "form", function(event){
+    setTimeout(function () {
+        orig_form_data = form_obj.serialize();
+    }, 1000);
+
+    $(document).on("submit", "form", function (event) {
         window.onbeforeunload = null;
     });
-    window.onbeforeunload = function() {
+    window.onbeforeunload = function () {
         if (form_obj.serialize() != orig_form_data) {
             return LANG.sure;
         }
-    }
+    };
 }
 
 //initialize tinyMCE editor for invoice template
 function init_tinymce(editor_id) {
     tinymce.init({
-        selector: 'textarea#' + editor_id,
+        selector: "textarea#" + editor_id,
         plugins: [
-        'advlist autolink link image code lists charmap print preview hr anchor pagebreak',
-        'searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking',
-        'table template paste help'
+            "advlist autolink link image code lists charmap print preview hr anchor pagebreak",
+            "searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking",
+            "table template paste help",
         ],
-        toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify |' +
-          ' bullist numlist outdent indent | link image | print preview fullpage | ' +
-          'forecolor backcolor',
+        toolbar:
+            "undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify |" +
+            " bullist numlist outdent indent | link image | print preview fullpage | " +
+            "forecolor backcolor",
         menu: {
-          favs: {title: 'My Favorites', items: 'code | searchreplace'}
+            favs: { title: "My Favorites", items: "code | searchreplace" },
         },
-        menubar: 'favs file edit view insert format tools table help',
+        menubar: "favs file edit view insert format tools table help",
         /* enable title field in the Image dialog*/
-  image_title: true,
-  /* enable automatic uploads of images represented by blob or data URIs*/
-  automatic_uploads: true,
-  /*
+        image_title: true,
+        /* enable automatic uploads of images represented by blob or data URIs*/
+        automatic_uploads: true,
+        /*
     URL of our upload handler (for more details check: https://www.tiny.cloud/docs/configure/file-image-upload/#images_upload_url)
     images_upload_url: 'postAcceptor.php',
     here we add custom filepicker only to Image dialog
   */
-  file_picker_types: 'image',
-  /* and here's our custom image picker*/
-  file_picker_callback: function (cb, value, meta) {
-    var input = document.createElement('input');
-    input.setAttribute('type', 'file');
-    input.setAttribute('accept', 'image/*');
+        file_picker_types: "image",
+        /* and here's our custom image picker*/
+        file_picker_callback: function (cb, value, meta) {
+            var input = document.createElement("input");
+            input.setAttribute("type", "file");
+            input.setAttribute("accept", "image/*");
 
-    /*
+            /*
       Note: In modern browsers input[type="file"] is functional without
       even adding it to the DOM, but that might not be the case in some older
       or quirky browsers like IE, so you might want to add it to the DOM
@@ -509,48 +750,48 @@ function init_tinymce(editor_id) {
       once you do not need it anymore.
     */
 
-    input.onchange = function () {
-      var file = this.files[0];
+            input.onchange = function () {
+                var file = this.files[0];
 
-      var reader = new FileReader();
-      reader.onload = function () {
-        /*
+                var reader = new FileReader();
+                reader.onload = function () {
+                    /*
           Note: Now we need to register the blob in TinyMCEs image blob
           registry. In the next release this part hopefully won't be
           necessary, as we are looking to handle it internally.
         */
-        var id = 'blobid' + (new Date()).getTime();
-        var blobCache =  tinymce.activeEditor.editorUpload.blobCache;
-        var base64 = reader.result.split(',')[1];
-        var blobInfo = blobCache.create(id, file, base64);
-        blobCache.add(blobInfo);
+                    var id = "blobid" + new Date().getTime();
+                    var blobCache = tinymce.activeEditor.editorUpload.blobCache;
+                    var base64 = reader.result.split(",")[1];
+                    var blobInfo = blobCache.create(id, file, base64);
+                    blobCache.add(blobInfo);
 
-        /* call the callback and populate the Title field with the file name */
-        cb(blobInfo.blobUri(), { title: file.name });
-      };
-      reader.readAsDataURL(file);
-    };
+                    /* call the callback and populate the Title field with the file name */
+                    cb(blobInfo.blobUri(), { title: file.name });
+                };
+                reader.readAsDataURL(file);
+            };
 
-    input.click();
-  },
+            input.click();
+        },
     });
 }
 
 function getSelectedRows() {
     var selected_rows = [];
     var i = 0;
-    $('.row-select:checked').each(function () {
+    $(".row-select:checked").each(function () {
         selected_rows[i++] = $(this).val();
     });
 
-    return selected_rows; 
+    return selected_rows;
 }
 
 function __is_online() {
     return true;
-    
+
     //if localhost always return true
-    if ($('#__is_localhost').length > 0) {
+    if ($("#__is_localhost").length > 0) {
         return true;
     }
 
@@ -559,10 +800,10 @@ function __is_online() {
 
 function __disable_submit_button(element) {
     if (__is_online()) {
-        element.attr('disable', true);
+        element.attr("disable", true);
     }
 }
 
 function __current_datetime() {
-    return moment().format(moment_date_format + ' ' + moment_time_format);
+    return moment().format(moment_date_format + " " + moment_time_format);
 }

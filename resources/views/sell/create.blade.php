@@ -472,7 +472,7 @@ $title = __('lang_v1.sales_order');
 
 
 		<!-- Product Form Accordion-->
-		<div class="accordionItem">
+		<div class="accordionItem" >
 			<!-- Accordion Title -->
 			<div class="accordionTitle is-open">
 				<h2 class="">@lang('lang_v1.product')</h2>
@@ -561,8 +561,8 @@ $title = __('lang_v1.sales_order');
 											<b>@lang('sale.item'):</b>
 											<span class="total_quantity">0</span>
 											&nbsp;&nbsp;&nbsp;&nbsp;
-											<b>@lang('sale.total'): </b>
-											<span class="price_total">0</span>
+											{{-- <b>@lang('sale.total'): </b>
+											<span class="price_total">0</span> --}}
 										</div>
 									</td>
 								</tr>
@@ -583,9 +583,9 @@ $title = __('lang_v1.sales_order');
 				</svg>
 			</div>
 
-			<div class="accordionContent">
+			<div class="accordionContent"  >
 				<div class="row">
-					<div class="col-md-4  @if($sale_type == 'sales_order') hide @endif">
+					{{-- <div class="col-md-4  @if($sale_type == 'sales_order') hide @endif">
 						<div class="form-group">
 							{!! Form::label('discount_type', __('sale.discount_type') . ':*' ) !!}
 							<div class="input-group">
@@ -595,7 +595,7 @@ $title = __('lang_v1.sales_order');
 								{!! Form::select('discount_type', ['fixed' => __('lang_v1.fixed'), 'percentage' => __('lang_v1.percentage')], 'percentage' , ['class' => 'form-control','placeholder' => __('messages.please_select'), 'required', 'data-default' => 'percentage']); !!}
 							</div>
 						</div>
-					</div>
+					</div> --}}
 					@php
 					$max_discount = !is_null(auth()->user()->max_sales_discount_percent) ? auth()->user()->max_sales_discount_percent : '';
 
@@ -610,7 +610,7 @@ $title = __('lang_v1.sales_order');
 					$default_sales_tax = null;
 					}
 					@endphp
-					<div class="col-md-4 @if($sale_type == 'sales_order') hide @endif">
+					{{-- <div class="col-md-4 @if($sale_type == 'sales_order') hide @endif">
 						<div class="form-group">
 							{!! Form::label('discount_amount', __('sale.discount_amount') . ':*' ) !!}
 							<div class="input-group">
@@ -620,11 +620,11 @@ $title = __('lang_v1.sales_order');
 								{!! Form::text('discount_amount', @num_format($sales_discount), ['class' => 'form-control input_number', 'data-default' => $sales_discount, 'data-max-discount' => $max_discount, 'data-max-discount-error_msg' => __('lang_v1.max_discount_error_msg', ['discount' => $max_discount != '' ? @num_format($max_discount) : '']) ]); !!}
 							</div>
 						</div>
-					</div>
-					<div class="col-md-4 @if($sale_type == 'sales_order') hide @endif"><br>
+					</div> --}}
+					{{-- <div class="col-md-4 @if($sale_type == 'sales_order') hide @endif"><br>
 						<b>@lang( 'sale.discount_amount' ):</b>(-)
 						<span class="display_currency" id="total_discount">0</span>
-					</div>
+					</div> --}}
 					<div class="clearfix"></div>
 					<div class="col-md-12 well well-sm bg-light-gray @if(session('business.enable_rp') != 1 || $sale_type == 'sales_order') hide @endif">
 						<input type="hidden" name="rp_redeemed" id="rp_redeemed" value="0">
@@ -652,7 +652,7 @@ $title = __('lang_v1.sales_order');
 						</div>
 					</div>
 					<div class="clearfix"></div>
-					<div class="col-md-4  @if($sale_type == 'sales_order') hide @endif">
+					<div class="col-md-4 hide @if($sale_type == 'sales_order')  @endif">
 						<div class="form-group">
 							{!! Form::label('tax_rate_id', __('sale.order_tax') . ':*' ) !!}
 							<div class="input-group">
@@ -667,8 +667,37 @@ $title = __('lang_v1.sales_order');
 						</div>
 					</div>
 					<div class="col-md-4 col-md-offset-4  @if($sale_type == 'sales_order') hide @endif">
-						<b>@lang( 'sale.order_tax' ):</b>(+)
-						<span class="display_currency" id="order_tax">0</span>
+					<table class="table table-condensed table-bordered table-striped" >
+						<tr>
+									<td>
+										<b>@lang( 'sale.total_before_tax' ):</b>
+									</td>
+										<td>
+										<span class="display_currency" id="total_before_tax">0</span>
+									</td>
+						</tr>
+
+						    <tbody id="per_tax_breakdown"></tbody>
+							<tr>
+									<td>
+										<b>@lang( 'sale.total_tax' ):</b>
+									</td>
+										<td>
+									<span class="display_currency" id="order_tax">0</span>
+									</td>
+						</tr>
+
+						<tr>
+									<td>
+										<b>@lang( 'sale.total_after_tax' ):</b>
+									</td>
+										<td>
+										<span class="display_currency" id="total_after_tax">0</span>
+									</td>
+						</tr>
+				
+					</table >
+					
 					</div>
 
 					<div class="col-md-12">
@@ -892,7 +921,7 @@ $title = __('lang_v1.sales_order');
 							</tbody>
 						</table>
 					</div>
-					<div class="col-md-4 col-md-offset-8">
+					<div class="col-md-4 col-md-offset-8" >
 						@if(!empty($pos_settings['amount_rounding_method']) && $pos_settings['amount_rounding_method'] > 0)
 						<small id="round_off"><br>(@lang('lang_v1.round_off'): <span id="round_off_text">0</span>)</small>
 						<br />

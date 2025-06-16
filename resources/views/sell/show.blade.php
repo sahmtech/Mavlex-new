@@ -37,7 +37,7 @@
                 </div>
 
                 <div class="invoice-bill-info">
-                    <div class="company-address">
+                    <div class="company-address" >
                         <h3>{{ $sell->contact->name }}</h3>
                         <span>
                         
@@ -62,7 +62,7 @@
                        
                     </div>
 
-                    <div class="bill-address">
+                    <div class="bill-address" >
                         <h3>@lang('lang_v2.bill_to')</h3>
                         @if(!empty($sell->billing_address()))
                         <span>{{$sell->billing_address()}}</span>
@@ -70,7 +70,7 @@
                         
                     </div>
                 </div>
-                <div class="table-responsive" style="min-height: .01%; max-height:600px; overflow-x: auto; overflow-y:auto">
+                <div class="table-responsive" style="min-height: .01%; max-height:600px; overflow-x: auto; overflow-y:auto" >
                 @include('sale_pos.partials.sale_line_details')
                 </div>
                 @php
@@ -107,14 +107,14 @@
                                 <td class="text-right">
                                   @if(!empty($order_taxes))
                                     @foreach($order_taxes as $k => $v)
-                                      <strong><small>{{$k}}</small></strong> - <span class="display_currency pull-right" data-currency_symbol="true">{{ $v }}</span><br>
+                                   <span class="display_currency pull-right" data-currency_symbol="true">{{ $v }}</span><br>
                                     @endforeach
                                   @else
                                   0.00
                                   @endif
                                 </td>
                               </tr>
-                              @if(!empty($line_taxes))
+                              {{-- @if(!empty($line_taxes))
                               <tr>
                                 <td>{{ __('lang_v1.line_taxes') }}</td>
                                 <td class="text-right">
@@ -127,7 +127,7 @@
                                   @endif
                                 </td>
                               </tr>
-                              @endif
+                              @endif --}}
                               
                   
                              

@@ -1134,6 +1134,7 @@ return [
     'for_tax_group_only_help' => 'If checked, this tax will not be displayed indivisually in dropdowns, only can be added in tax group',
     'exempt' => 'Exempt',
     'tax_exempt_help' => 'Zero percent tax rate will be considered as tax exempt',
+    "min_amount_tax_help" => "Minimum amount for the tax",
     'show_total_in_words' => 'Show total in words',
     'show_in_word_help' => 'php-intl extention need to be enabled',
     'print_on_suspend' => 'Print invoice on suspend',
@@ -1764,5 +1765,5 @@ return [
     'display_screen_heading_instruction' => 'HTML tags are supported',
 
 
-    
+
 ];

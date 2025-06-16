@@ -18,10 +18,12 @@ class TaxUtil extends Util
     {
         $amount = 0;
         $tax_rate = TaxRate::where('id', $group_tax_id)->with(['sub_taxes'])->first();
-        foreach ($tax_rate->sub_taxes as $sub_tax) {
-            $amount += $sub_tax->amount;
+        if ($tax_rate) {
+            foreach ($tax_rate->sub_taxes as $sub_tax) {
+                $amount += $sub_tax->amount;
+            }
+            $tax_rate->amount = $amount;
+            $tax_rate->save();
         }
-        $tax_rate->amount = $amount;
-        $tax_rate->save();
     }
 }

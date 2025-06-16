@@ -46,6 +46,8 @@ use App\Events\SellCreatedOrModified;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Arr;
 
+use function Laravel\Prompts\error;
+
 class SellPosController extends Controller
 {
     /**
@@ -89,8 +91,20 @@ class SellPosController extends Controller
 
 
         $this->dummyPaymentLine = [
-            'method' => 'cash', 'amount' => 0, 'note' => '', 'card_transaction_number' => '', 'card_number' => '', 'card_type' => '', 'card_holder_name' => '', 'card_month' => '', 'card_year' => '', 'card_security' => '', 'cheque_number' => '', 'bank_account_number' => '',
-            'is_return' => 0, 'transaction_no' => ''
+            'method' => 'cash',
+            'amount' => 0,
+            'note' => '',
+            'card_transaction_number' => '',
+            'card_number' => '',
+            'card_type' => '',
+            'card_holder_name' => '',
+            'card_month' => '',
+            'card_year' => '',
+            'card_security' => '',
+            'cheque_number' => '',
+            'bank_account_number' => '',
+            'is_return' => 0,
+            'transaction_no' => ''
         ];
     }
 
@@ -313,7 +327,7 @@ class SellPosController extends Controller
         }
 
         return view('sale_pos.create', $data);
-            }
+    }
     private function isMobile()
     {
         return preg_match('/(android|iphone|ipad|mobile)/i', request()->userAgent());
@@ -326,6 +340,8 @@ class SellPosController extends Controller
      */
     public function store(Request $request)
     {
+
+        // return $request->all();
         if (!auth()->user()->can('sell.create') && !auth()->user()->can('direct_sell.access') && !auth()->user()->can('so.create')) {
             abort(403, 'Unauthorized action.');
         }
@@ -342,7 +358,11 @@ class SellPosController extends Controller
 
         try {
             $input = $request->except('_token');
-
+            error_log(' ---------------- ');
+            error_log(json_encode($input));
+            error_log(' ---------------- ');
+            error_log('input final_total: ' . $input['final_total']);
+            error_log(' ---------------- ');
             $input['is_quotation'] = 0;
             //status is send as quotation from Add sales screen.
             if ($input['status'] == 'quotation') {
@@ -390,13 +410,21 @@ class SellPosController extends Controller
                 }
 
                 $user_id = $request->session()->get('user.id');
-
+                $input['discount_type'] = 'fixed';
+                $input['discount_amount'] = 0;
                 $discount = [
                     'discount_type' => $input['discount_type'],
                     'discount_amount' => $input['discount_amount'],
                 ];
+
                 $invoice_total = $this->productUtil->calculateInvoiceTotal($input['products'], $input['tax_rate_id'], $discount);
 
+                //fix_total
+                // $input['final_total'] = $invoice_total['final_total'];
+                // $invoice_total['final_total'] = $input['final_total'];
+                error_log('invoice_total final_total: ' . $invoice_total['final_total']);
+                error_log(' ---------------- ');
+                // return $invoice_total;
                 DB::beginTransaction();
 
                 if (empty($request->input('transaction_date'))) {
@@ -508,9 +536,12 @@ class SellPosController extends Controller
 
                 //upload document
                 $input['document'] = $this->transactionUtil->uploadFile($request, 'sell_document', 'documents');
-
+                error_log('app/Http/Controllers/SellPosController.php');
+                error_log("input final_total: " . $input['final_total']);
+                error_log(' ---------------- ');
                 $transaction = $this->transactionUtil->createSellTransaction($business_id, $input, $invoice_total, $user_id);
-
+                error_log("final_total: " . $transaction['final_total']);
+                error_log(' ---------------- ');
                 //Upload Shipping documents
                 Media::uploadMedia($business_id, $transaction, $request, 'shipping_documents', false, 'shipping_document');
 
@@ -683,6 +714,7 @@ class SellPosController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::emergency('File:' . $e->getFile() . 'Line:' . $e->getLine() . 'Message:' . $e->getMessage());
+            error_log('File:' . $e->getFile() . 'Line:' . $e->getLine() . 'Message:' . $e->getMessage());
             $msg = trans('messages.something_went_wrong');
 
             if (get_class($e) == \App\Exceptions\PurchaseSellMismatch::class) {
@@ -800,17 +832,17 @@ class SellPosController extends Controller
 
         // B2B/B2C ZATCA logic
         $zatca_info = $location_details->zatca_info ?? [];
-        $printB2B    = Arr::get($zatca_info, 'enable_auto_b2b_b2c_print', false); 
-        if ($this->moduleUtil->isModuleInstalled('Zatca') && $printB2B && ! $is_package_slip&& ! $is_kot) {
-         $transaction = Transaction::with('contact')->where('business_id', $business_id)->findOrFail($transaction_id);
-         $contact = $transaction->contact;
-         $contactName = $contact->supplier_business_name ?? null;
-         $is_b2b_invoice = (bool)($contact && $contact->tax_number && $contactName && $contact->zip_code && $contact->city && $contact->address_line_1 && $contact->address_line_2);
-         $view = $is_b2b_invoice ? 'zatca::sale_pos.receipts.elegant_ar_en' : 'zatca::sale_pos.receipts.zatca_b2c_slim_ar_en';
-         $output['html_content'] = view($view, compact('receipt_details'))->render();
-         return $output;
+        $printB2B    = Arr::get($zatca_info, 'enable_auto_b2b_b2c_print', false);
+        if ($this->moduleUtil->isModuleInstalled('Zatca') && $printB2B && ! $is_package_slip && ! $is_kot) {
+            $transaction = Transaction::with('contact')->where('business_id', $business_id)->findOrFail($transaction_id);
+            $contact = $transaction->contact;
+            $contactName = $contact->supplier_business_name ?? null;
+            $is_b2b_invoice = (bool)($contact && $contact->tax_number && $contactName && $contact->zip_code && $contact->city && $contact->address_line_1 && $contact->address_line_2);
+            $view = $is_b2b_invoice ? 'zatca::sale_pos.receipts.elegant_ar_en' : 'zatca::sale_pos.receipts.zatca_b2c_slim_ar_en';
+            $output['html_content'] = view($view, compact('receipt_details'))->render();
+            return $output;
         }
-        
+
         $output['print_title'] = $receipt_details->invoice_no;
         // If print type browser - return the content, printer - return printer config data, and invoice format config
         if ($receipt_printer_type == 'printer') {
@@ -1150,14 +1182,13 @@ class SellPosController extends Controller
 
         $restaurant_settings = empty($business_details->restaurant_settings) ? $this->businessUtil->defaultRestaurantSettings() : json_decode($business_details->restaurant_settings, true);
         if ($this->isMobile()) {
-        return view('mobile_sale_pos.edit')
-            ->with(compact('order_type', 'restaurant_settings', 'selected_order_type', 'exchangeRates', 'selected_exchange_rate_id', 'business_details', 'taxes', 'payment_types', 'walk_in_customer', 'sell_details', 'transaction', 'payment_lines', 'location_printer_type', 'shortcuts', 'commission_agent', 'categories', 'pos_settings', 'change_return', 'types', 'customer_groups', 'brands', 'accounts', 'waiters', 'redeem_details', 'edit_price', 'edit_discount', 'shipping_statuses', 'warranties', 'sub_type', 'pos_module_data', 'invoice_schemes', 'default_invoice_schemes', 'invoice_layouts', 'featured_products', 'customer_due', 'users', 'is_zatca'));
+            return view('mobile_sale_pos.edit')
+                ->with(compact('order_type', 'restaurant_settings', 'selected_order_type', 'exchangeRates', 'selected_exchange_rate_id', 'business_details', 'taxes', 'payment_types', 'walk_in_customer', 'sell_details', 'transaction', 'payment_lines', 'location_printer_type', 'shortcuts', 'commission_agent', 'categories', 'pos_settings', 'change_return', 'types', 'customer_groups', 'brands', 'accounts', 'waiters', 'redeem_details', 'edit_price', 'edit_discount', 'shipping_statuses', 'warranties', 'sub_type', 'pos_module_data', 'invoice_schemes', 'default_invoice_schemes', 'invoice_layouts', 'featured_products', 'customer_due', 'users', 'is_zatca'));
         } else {
             return view('sale_pos.edit')
-            ->with(compact('order_type', 'restaurant_settings', 'selected_order_type', 'exchangeRates', 'selected_exchange_rate_id', 'business_details', 'taxes', 'payment_types', 'walk_in_customer', 'sell_details', 'transaction', 'payment_lines', 'location_printer_type', 'shortcuts', 'commission_agent', 'categories', 'pos_settings', 'change_return', 'types', 'customer_groups', 'brands', 'accounts', 'waiters', 'redeem_details', 'edit_price', 'edit_discount', 'shipping_statuses', 'warranties', 'sub_type', 'pos_module_data', 'invoice_schemes', 'default_invoice_schemes', 'invoice_layouts', 'featured_products', 'customer_due', 'users', 'is_zatca'));
+                ->with(compact('order_type', 'restaurant_settings', 'selected_order_type', 'exchangeRates', 'selected_exchange_rate_id', 'business_details', 'taxes', 'payment_types', 'walk_in_customer', 'sell_details', 'transaction', 'payment_lines', 'location_printer_type', 'shortcuts', 'commission_agent', 'categories', 'pos_settings', 'change_return', 'types', 'customer_groups', 'brands', 'accounts', 'waiters', 'redeem_details', 'edit_price', 'edit_discount', 'shipping_statuses', 'warranties', 'sub_type', 'pos_module_data', 'invoice_schemes', 'default_invoice_schemes', 'invoice_layouts', 'featured_products', 'customer_due', 'users', 'is_zatca'));
         }
-   
-        }
+    }
 
     /**
      * Update the specified resource in storage.
@@ -1243,11 +1274,13 @@ class SellPosController extends Controller
                 $business_id = $request->session()->get('user.business_id');
                 $user_id = $request->session()->get('user.id');
                 $commsn_agnt_setting = $request->session()->get('business.sales_cmsn_agnt');
-
+                $input['discount_type'] = 'fixed';
+                $input['discount_amount'] = 0;
                 $discount = [
                     'discount_type' => $input['discount_type'],
                     'discount_amount' => $input['discount_amount'],
                 ];
+
                 $invoice_total = $this->productUtil->calculateInvoiceTotal($input['products'], $input['tax_rate_id'], $discount);
 
                 if (!empty($request->input('transaction_date'))) {
@@ -1773,17 +1806,17 @@ class SellPosController extends Controller
                 $edit_price = auth()->user()->can('edit_product_price_from_pos_screen');
             }
 
-          
-if ($this->isMobile()) {
-   
-    $output['html_content'] = view('mobile_sale_pos.product_row')
-        ->with(compact('product', 'row_count', 'tax_dropdown', 'enabled_modules', 'pos_settings', 'sub_units', 'discount', 'waiters', 'edit_discount', 'edit_price', 'purchase_line_id', 'warranties', 'quantity', 'is_direct_sell', 'so_line', 'is_sales_order', 'combo_products', 'combo_variations', 'combo_modifiers'))
-        ->render();
-} else {
-    $output['html_content'] = view('sale_pos.product_row')
-        ->with(compact('product', 'row_count', 'tax_dropdown', 'enabled_modules', 'pos_settings', 'sub_units', 'discount', 'waiters', 'edit_discount', 'edit_price', 'purchase_line_id', 'warranties', 'quantity', 'is_direct_sell', 'so_line', 'is_sales_order', 'combo_products', 'combo_variations', 'combo_modifiers'))
-        ->render();
-}
+
+            if ($this->isMobile()) {
+
+                $output['html_content'] = view('mobile_sale_pos.product_row')
+                    ->with(compact('product', 'row_count', 'tax_dropdown', 'enabled_modules', 'pos_settings', 'sub_units', 'discount', 'waiters', 'edit_discount', 'edit_price', 'purchase_line_id', 'warranties', 'quantity', 'is_direct_sell', 'so_line', 'is_sales_order', 'combo_products', 'combo_variations', 'combo_modifiers'))
+                    ->render();
+            } else {
+                $output['html_content'] = view('sale_pos.product_row')
+                    ->with(compact('product', 'row_count', 'tax_dropdown', 'enabled_modules', 'pos_settings', 'sub_units', 'discount', 'waiters', 'edit_discount', 'edit_price', 'purchase_line_id', 'warranties', 'quantity', 'is_direct_sell', 'so_line', 'is_sales_order', 'combo_products', 'combo_variations', 'combo_modifiers'))
+                    ->render();
+            }
         }
 
         return $output;
@@ -2906,28 +2939,28 @@ if ($this->isMobile()) {
         if (!(config('constants.enable_download_pdf') && auth()->user()->can("print_invoice"))) {
             abort(403, 'Unauthorized action.');
         }
-    
+
         $business_id = request()->session()->get('user.business_id');
-    
+
         $receipt_contents = $this->transactionUtil->getPdfContentsForGivenTransaction($business_id, $id);
         $receipt_details = $receipt_contents['receipt_details'];
         $location_details = $receipt_contents['location_details'];
         $is_email_attachment = false;
-    
+
         $blade_file = 'download_pdf';
         if (!empty($receipt_details->is_export)) {
             $blade_file = 'download_export_pdf';
         }
-    
+
         //Determine the current locale
         $locale = app()->getLocale();
         $direction = ($locale == 'ar') ? 'rtl' : 'ltr';
-    
+
         //Generate pdf
         $body = view('sale_pos.receipts.classic')
             ->with(compact('receipt_details', 'location_details', 'is_email_attachment'))
             ->render();
-    
+
         $mpdf = new \Mpdf\Mpdf([
             'tempDir' => public_path('uploads/temp'),
             'mode' => 'utf-8',
@@ -2946,7 +2979,7 @@ if ($this->isMobile()) {
         } else {
             $mpdf->SetDirectionality('ltr');
         }
-    
+
         $mpdf->useSubstitutions = true;
         $mpdf->SetWatermarkText($receipt_details->business_name, 0.1);
         $mpdf->showWatermarkText = true;
@@ -2954,7 +2987,7 @@ if ($this->isMobile()) {
         $mpdf->WriteHTML($body);
         $mpdf->Output('INVOICE-' . $receipt_details->invoice_no . '.pdf', 'I');
     }
-    
+
 
     /**
      * download pdf for given quotation
@@ -2965,26 +2998,26 @@ if ($this->isMobile()) {
         if (!config('constants.enable_download_pdf')) {
             abort(403, 'Unauthorized action.');
         }
-    
+
         $business_id = request()->session()->get('user.business_id');
         $sub_status = request()->input('sub_status', '');
-    
+
         $receipt_contents = $this->transactionUtil->getPdfContentsForGivenTransaction($business_id, $id);
         $receipt_details = $receipt_contents['receipt_details'];
         $location_details = $receipt_contents['location_details'];
-    
+
         // Determine the current locale and direction
         $locale = app()->getLocale();
         $direction = ($locale == 'ar') ? 'rtl' : 'ltr';
-    
+
         // Generate PDF content
         $body = view('sale_pos.receipts.download_quotation_pdf')
             ->with(compact('receipt_details', 'location_details', 'sub_status'))
             ->render();
-    
+
         // Determine PDF name based on subscription status
         $pdf_name = ($sub_status === 'proforma') ? __('lang_v1.proforma_invoice') : 'QUOTATION';
-    
+
         // Initialize mPDF with appropriate settings
         $mpdf = new \Mpdf\Mpdf([
             'tempDir' => public_path('uploads/temp'),
@@ -2998,25 +3031,25 @@ if ($this->isMobile()) {
             'format' => 'A4',
             'default_font' => 'dejavusans', // Ensure font supports Arabic
         ]);
-    
+
         // Set directionality based on locale
         if ($direction === 'rtl') {
             $mpdf->SetDirectionality('rtl');
         } else {
             $mpdf->SetDirectionality('ltr');
         }
-    
+
         // Optional: Add watermark
         $mpdf->SetWatermarkText($receipt_details->business_name, 0.1);
         $mpdf->showWatermarkText = true;
-    
+
         $mpdf->SetTitle($pdf_name . '-' . $receipt_details->invoice_no . '.pdf');
-    
+
         $mpdf->WriteHTML($body);
-    
+
         $mpdf->Output($pdf_name . '-' . $receipt_details->invoice_no . '.pdf', 'I');
     }
-    
+
 
     /**
      * download pdf for given shipment
@@ -3027,22 +3060,22 @@ if ($this->isMobile()) {
         if (!config('constants.enable_download_pdf')) {
             abort(403, 'Unauthorized action.');
         }
-    
+
         $business_id = request()->session()->get('user.business_id');
-    
+
         $receipt_contents = $this->transactionUtil->getPdfContentsForGivenTransaction($business_id, $id);
         $receipt_details = $receipt_contents['receipt_details'];
         $location_details = $receipt_contents['location_details'];
-    
+
         // Determine the current locale and direction
         $locale = app()->getLocale();
         $direction = ($locale == 'ar') ? 'rtl' : 'ltr';
-    
+
         // Generate PDF content
         $body = view('sale_pos.receipts.download_packing_list_pdf')
             ->with(compact('receipt_details', 'location_details'))
             ->render();
-    
+
         // Initialize mPDF with appropriate settings
         $mpdf = new \Mpdf\Mpdf([
             'tempDir' => public_path('uploads/temp'),
@@ -3056,7 +3089,7 @@ if ($this->isMobile()) {
             'format' => 'A4',
             'default_font' => 'dejavusans', // Ensure font supports Arabic
         ]);
-    
+
         // Set directionality based on locale
         if ($direction === 'rtl') {
             $mpdf->SetDirectionality('rtl');
@@ -3065,14 +3098,14 @@ if ($this->isMobile()) {
         }
         $mpdf->SetWatermarkText($receipt_details->business_name, 0.1);
         $mpdf->showWatermarkText = true;
-    
+
         $mpdf->SetTitle('PACKINGSLIP-' . $receipt_details->invoice_no . '.pdf');
-    
+
         $mpdf->WriteHTML($body);
 
         $mpdf->Output('PACKINGSLIP-' . $receipt_details->invoice_no . '.pdf', 'I');
     }
-    
+
 
     /**
      * Returns the HTML row for a payment in POS
@@ -3320,7 +3353,8 @@ if ($this->isMobile()) {
         $transaction = $transaction->first();
 
         if (empty($transaction)) {
-            return ['success' => 0,
+            return [
+                'success' => 0,
                 'msg' => trans('lang_v1.sell_not_found'),
             ];
         }
@@ -3374,11 +3408,11 @@ if ($this->isMobile()) {
         }
 
         if ($transaction) {
-            return ['success' => 1,
+            return [
+                'success' => 1,
                 'msg' => view('sale_pos.partials.service_staff_replacement_modal', compact('transaction', 'sell_details', 'waiters', 'enabled_modules', 'pos_settings'))->render(),
             ];
         }
-
     }
 
     public function change_service_staff($id, Request $request)
@@ -3407,21 +3441,20 @@ if ($this->isMobile()) {
 
                 DB::commit();
 
-                $output = ['success' => 1,
+                $output = [
+                    'success' => 1,
                     'msg' => __('lang_v1.updated_success'),
                 ];
-
             } catch (\Exception $e) {
                 DB::rollBack();
                 \Log::emergency('File:' . $e->getFile() . 'Line:' . $e->getLine() . 'Message:' . $e->getMessage());
-                $output = ['success' => 0,
+                $output = [
+                    'success' => 0,
                     'msg' => __('messages.something_went_wrong'),
                 ];
             }
 
             return $output;
-
         }
     }
-
 }

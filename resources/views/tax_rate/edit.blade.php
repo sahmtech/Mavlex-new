@@ -20,6 +20,10 @@
       </div>
 
       <div class="form-group">
+        {!! Form::label('min_amount', __( 'tax_rate.min_amount' ) . ':') !!} @show_tooltip(__('lang_v1.min_amount_tax_help'))
+          {!! Form::text('min_amount', $tax_rate->min_amount, ['class' => 'form-control input_number']); !!}
+      </div>
+      <div class="form-group">
         <p>@lang('lang_v1.for_tax_group_only') @show_tooltip(__('lang_v1.for_tax_group_only_help'))</p>
         <div class="toggle-wrapper d-flex gap-2 mt-4">
             <label class="switch" for="for_tax_group">

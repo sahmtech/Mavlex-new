@@ -144,9 +144,11 @@
 			@endif
 		</td>
 		<td class="text-center hide">
+
 			{!! Form::hidden("products[$row_count][item_tax]", @num_format($item_tax), ['class' => 'item_tax']); !!}
 		
 			{!! Form::select("products[$row_count][tax_id]", $tax_dropdown['tax_rates'], $tax_id, ['placeholder' => 'Select', 'class' => 'form-control tax_id'], $tax_dropdown['attributes']); !!}
+		
 		</td>
 	<td class="text-center">
 		@format_currency($unit_price_inc_tax)

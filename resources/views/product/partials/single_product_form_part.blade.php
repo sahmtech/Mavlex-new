@@ -12,7 +12,7 @@
 <div class="col-sm-12 {{$class}}">
   
 <div class="table-responsive">
-    <table class="table table-bordered add-product-price-table table-condensed {{$class}}">
+    <table class="table table-bordered add-product-price-table table-condensed {{$class}}" >
         <tr>
           <th>@lang('product.default_purchase_price')</th>
           <th>@lang('product.profit_percent') @show_tooltip(__('tooltip.profit_percent'))</th>
@@ -21,8 +21,8 @@
             <th>@lang('lang_v1.product_image')</th>
           @endif
         </tr>
-        <tr>
-          <td>
+        <tr >
+          <td >
             <div class="col-sm-6">
               {!! Form::label('single_dpp', trans('product.exc_of_tax') . ':*') !!}
 
@@ -41,7 +41,7 @@
             {!! Form::text('profit_percent', @num_format($profit_percent), ['class' => 'form-control input-sm input_number', 'id' => 'profit_percent', 'required']); !!}
           </td>
 
-          <td>
+          <td >
             <label><span class="dsp_label">@lang('product.exc_of_tax')</span></label>
             {!! Form::text('single_dsp', $default, ['class' => 'form-control input-sm dsp input_number', 'placeholder' => __('product.exc_of_tax'), 'id' => 'single_dsp', 'required']); !!}
 

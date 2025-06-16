@@ -17,6 +17,7 @@
         <th>{{ __('sale.unit_price') }}</th>
         <th>{{ __('sale.discount') }}</th>
         <th>{{ __('sale.tax') }}</th>
+        <th>{{ __('sale.tax') }}</th>
         <th>{{ __('sale.price_inc_tax') }}</th>
         <th>{{ __('sale.subtotal') }}</th>
     </tr>
@@ -90,6 +91,12 @@
                 <span class="display_currency" data-currency_symbol="true">{{ $sell_line->item_tax }}</span> 
                 @if(!empty($taxes[$sell_line->tax_id]))
                 ( {{ $taxes[$sell_line->tax_id]}} )
+                @endif
+            </td>
+             <td>
+                <span class="display_currency" data-currency_symbol="true">{{ $sell_line->item_tax_2 }}</span> 
+                @if(!empty($taxes[$sell_line->tax_id_2]))
+                ( {{ $taxes[$sell_line->tax_id_2]}} )
                 @endif
             </td>
             <td>

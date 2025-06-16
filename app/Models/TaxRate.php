@@ -13,8 +13,8 @@ class TaxRate extends Model
      *
      * @var array
      */
-    
-    
+
+
     /**
      * The attributes that aren't mass assignable.
      *
@@ -54,7 +54,7 @@ class TaxRate extends Model
         $tax_attributes = null;
         if ($include_attributes) {
             $tax_attributes = collect($result)->mapWithKeys(function ($item) {
-                return [$item->id => ['data-rate' => $item->amount]];
+                return [$item->id => ['data-rate' => $item->amount, 'data-min_amount' => $item->min_amount]];
             })->all();
         }
 
@@ -70,9 +70,9 @@ class TaxRate extends Model
     public static function forBusiness($business_id)
     {
         $tax_rates = TaxRate::where('business_id', $business_id)
-                        ->select(['id', 'name', 'amount'])
-                        ->get()
-                        ->toArray();
+            ->select(['id', 'name', 'amount'])
+            ->get()
+            ->toArray();
 
         return $tax_rates;
     }
@@ -95,9 +95,9 @@ class TaxRate extends Model
     public static function groupTaxes($business_id)
     {
         $tax_rates = TaxRate::where('business_id', $business_id)
-                        ->where('is_tax_group', 1)
-                        ->with(['sub_taxes'])
-                        ->get();
+            ->where('is_tax_group', 1)
+            ->with(['sub_taxes'])
+            ->get();
 
         return $tax_rates;
     }

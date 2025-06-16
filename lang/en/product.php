@@ -30,6 +30,7 @@ return [
     'enable_stock_help' => 'Enable stock management at product level',
     'barcode_type' => 'Barcode Type',
     'applicable_tax' => 'Applicable Tax',
+    'applicable_extra_tax' => 'Applicable Extra Tax',
     'selling_price_tax_type' => 'Selling Price Tax Type',
     'inclusive' => 'Inclusive',
     'exclusive' => 'Exclusive',
@@ -63,4 +64,4 @@ return [
     'variation_sku_format_help_text' => 'Variation SKU Format -  When variation SKU is empty this format will be used to generate SKU for variations',
     'sku_number' => 'SKU-Number (Example -> ABC-1, ABC-2)',
     'sku_variation_number' => 'SKUVariation (Example -> ABCS, ABCM)'
- ];
+];

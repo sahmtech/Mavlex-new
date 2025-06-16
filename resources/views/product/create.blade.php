@@ -417,19 +417,36 @@
             </div>
           </div>
 
-          <div class="row">
-            <div class="col-sm-6 hide is_taxable_div">
-
+          <div class="row" >
+            <!-- tax 1 row -->
+            <div class="col-sm-3 hide is_taxable_div">
               <div class="form-group">
                 {!! Form::label('tax', __('product.applicable_tax') . ':') !!}
                 {!! Form::select('tax', $taxes, !empty($duplicate_product->tax) ? $duplicate_product->tax : null, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2', 'style' => 'width: 100%'], $tax_attributes); !!}
               </div>
             </div>
 
-            <div class="col-sm-6 hide is_taxable_div">
+            <div class="col-sm-3 hide is_taxable_div" >
               <div class="form-group">
                 {!! Form::label('tax_type', __('product.selling_price_tax_type') . ':*') !!}
                 {!! Form::select('tax_type', ['inclusive' => __('product.inclusive'), 'exclusive' => __('product.exclusive')], !empty($duplicate_product->tax_type) ? $duplicate_product->tax_type : 'exclusive',
+                ['class' => 'form-control select2', 'required', 'style' => 'width: 100%']); !!}
+              </div>
+            </div>
+
+
+            <!-- tax 2 row -->
+            <div class="col-sm-3 hide is_taxable_div">
+              <div class="form-group">
+                {!! Form::label('tax_2', __('product.applicable_extra_tax') . ':') !!}
+                {!! Form::select('tax_2', $taxes, !empty($duplicate_product->tax) ? $duplicate_product->tax : null, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2', 'style' => 'width: 100%'], $tax_attributes); !!}
+              </div>
+            </div>
+
+            <div class="col-sm-3 hide is_taxable_div" >
+              <div class="form-group">
+                {!! Form::label('tax_2_type', __('product.selling_price_tax_type') . ':*') !!}
+                {!! Form::select('tax_2_type', ['inclusive' => __('product.inclusive'), 'exclusive' => __('product.exclusive')], !empty($duplicate_product->tax_type) ? $duplicate_product->tax_type : 'exclusive',
                 ['class' => 'form-control select2', 'required', 'style' => 'width: 100%']); !!}
               </div>
             </div>
